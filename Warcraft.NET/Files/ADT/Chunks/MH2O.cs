@@ -10,7 +10,7 @@ namespace Warcraft.NET.Files.ADT.Chunks
     {
         public const string Signature = "MH2O";
 
-        private byte[] data;
+        public byte[] data;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MH2O"/> class.

@@ -217,24 +217,49 @@ namespace Warcraft.NET.Files.M2.Entries
 
     public struct RibbonEmitterStruct
     {
+        /// <summary>
+        /// Ribbon ID, always -1 in file.
+        /// </summary>
         public uint Unknown1;
+
+        /// <summary>
+        /// A bone to attach to.
+        /// </summary>
         public uint BoneID;
+
+        /// <summary>
+        /// Position relative to bone position.
+        /// </summary>
         public Vector3 Position;
+
         public int TextureCount;
         public int TextureOffset;
         public int BlendRefCount;
         public int BlendRefOffset;
+
         public ABlock<RGB> Color;
         public ABlock<short> Opacity;
-        public ABlock<int> Above;
-        public ABlock<int> Below;
+        public ABlock<float> Above;
+        public ABlock<float> Below;
+
         public float Resolution;
         public float Length;
         public float EmissionAngle;
-        public short RenderFlags;
-        public ABlock<short> UnknownABlock;
-        public ABlock<bool> UnknownABlock2;
-        public int Unknown2;
+
+        public short TextureRows;
+        public short TextureCols;
+
+        public ABlock<short> TextureSlotTrack;
+        public ABlock<bool> VisibilityTrack;
+
+        // Wrath+ only
+        public short PriorityPlane;
+        public sbyte RibbonColorIndex;
+
+        /// <summary>
+        /// Index into m2data.header.textureTransformCombos (UVAnimLookup in Warcraft.NET). Applied only if m2data.header.global_flags.flag_unk_0x20000 flag is set.
+        /// </summary>
+        public sbyte UVAnimLookupIndex;
     }
 
     public struct ParticleEmitterStruct

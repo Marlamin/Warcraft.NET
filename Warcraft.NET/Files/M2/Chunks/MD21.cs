@@ -203,7 +203,7 @@ namespace Warcraft.NET.Files.M2.Chunks
         private List<T> ReadStructList<T>(uint count, uint offset, BinaryReader br) where T : struct
         {
             br.BaseStream.Position = offset;
-            List<T> list = new List<T>();
+            List<T> list = [];
 
             for (var i = 0; i < count; i++)
                 list.Add(br.ReadStruct<T>());
@@ -211,7 +211,7 @@ namespace Warcraft.NET.Files.M2.Chunks
             return list;
         }
 
-        private List<TextureStruct> ReadTextures(uint count, uint offset, BinaryReader br)
+        private static List<TextureStruct> ReadTextures(uint count, uint offset, BinaryReader br)
         {
             br.BaseStream.Position = offset;
             var textures = new TextureStruct[count];
@@ -272,6 +272,15 @@ namespace Warcraft.NET.Files.M2.Chunks
             return (uint)Serialize().Length;
         }
 
+        private static void UpdateHeaderInfo(BinaryWriter bw, long headerOffset, uint newLength, uint newOffset)
+        {
+            var pos = bw.BaseStream.Position;
+            bw.BaseStream.Position = headerOffset;
+            bw.Write(newLength);
+            bw.Write(newOffset);
+            bw.BaseStream.Position = pos;
+        }
+
         /// <summary>
         /// Serializes the current object into a byte array.
         /// WARNING: The serializer just write back the original MD21 content!
@@ -279,7 +288,403 @@ namespace Warcraft.NET.Files.M2.Chunks
         /// <returns>The serialized object.</returns>
         public byte[] Serialize(long offset = 0)
         {
-            return data;
+            using var ms = new MemoryStream();
+            using (var bw = new BinaryWriter(ms))
+            {
+                bw.Write("MD20".ToCharArray());
+                bw.Write(Version);
+
+                bw.Write((uint)0); // lenModelname
+                bw.Write((uint)0); // ofsModelname
+
+                bw.Write((uint)Flags);
+
+                bw.Write((uint)Sequences.Count);
+                bw.Write((uint)0); // ofsSequences
+
+                bw.Write((uint)Animations.Count);
+                bw.Write((uint)0); // ofsAnimations
+
+                bw.Write((uint)AnimationLookups.Count);
+                bw.Write((uint)0); // ofsAnimationLookup    
+
+                bw.Write((uint)0); // nBones
+                bw.Write((uint)0); // ofsBones
+
+                bw.Write((uint)0); // nKeyboneLookup
+                bw.Write((uint)0); // ofsKeyboneLookup
+
+                bw.Write((uint)0); // nVertices
+                bw.Write((uint)0); // ofsVertices
+
+                bw.Write(ViewCount);
+
+                bw.Write((uint)0); // nColors
+                bw.Write((uint)0); // ofsColors
+
+                bw.Write((uint)0); // nTextures
+                bw.Write((uint)0); // ofsTextures
+
+                bw.Write((uint)0); // nTransparency
+                bw.Write((uint)0); // ofsTransparency
+
+                bw.Write((uint)0); // nUVAnimation
+                bw.Write((uint)0); // ofsUVAnimation
+
+                bw.Write((uint)0); // nTexReplace
+                bw.Write((uint)0); // ofsTexReplace
+
+                bw.Write((uint)0); // nRenderFlags
+                bw.Write((uint)0); // ofsRenderFlags
+
+                bw.Write((uint)0); // nBoneLookupTable
+                bw.Write((uint)0); // ofsBoneLookupTable
+
+                bw.Write((uint)0); // nTexLookup
+                bw.Write((uint)0); // ofsTexLookup
+
+                bw.Write((uint)0); // nUnk1
+                bw.Write((uint)0); // ofsUnk1
+
+                bw.Write((uint)0); // nTransLookup
+                bw.Write((uint)0); // ofsTranslookup
+
+                bw.Write((uint)0); // nUVAnimLookup
+                bw.Write((uint)0); // ofsUVAnimLookup
+
+                bw.WriteBoundingBox(BoundingBox, AxisConfiguration.Native);
+                bw.Write(BoundingBoxRadius);
+
+                bw.WriteBoundingBox(VertexBox, AxisConfiguration.Native);
+                bw.Write(VertexBoxRadius);
+
+                bw.Write((uint)0); // nBoundingTriangles
+                bw.Write((uint)0); // ofsBoundingTriangles
+
+                bw.Write((uint)0); // nBoundingVertices
+                bw.Write((uint)0); // ofsBoundingVertices
+
+                bw.Write((uint)0); // nBoundingNormals
+                bw.Write((uint)0); // ofsBoundingNormals
+
+                bw.Write((uint)0); // nAttachments
+                bw.Write((uint)0); // ofsAttachments
+
+                bw.Write((uint)0); // nAttachLookup
+                bw.Write((uint)0); // ofsAttachLookup
+
+                bw.Write((uint)0); // nEvents
+                bw.Write((uint)0); // ofsEvents
+
+                bw.Write((uint)0); // nLights
+                bw.Write((uint)0); // ofsLights
+
+                bw.Write((uint)0); // nCameras
+                bw.Write((uint)0); // ofsCameras
+
+                bw.Write((uint)0); // nCameraLookup
+                bw.Write((uint)0); // ofsCameraLookup
+
+                bw.Write((uint)0); // nRibbonEmitters
+                bw.Write((uint)0); // ofsRibbonEmitters
+
+                bw.Write((uint)0); // nParticleEmitters
+                bw.Write((uint)0); // ofsParticleEmitters
+
+                // Model with flag 8 have extra field
+                if (Flags.HasFlag(MD21Flags.UseTextureCombinerCombos))
+                {
+                    bw.Write((uint)0); // nUnk2
+                    bw.Write((uint)0); // ofsUnk2
+                }
+
+                if (!string.IsNullOrEmpty(Name))
+                {
+                    var ofsModelname = ms.Position;
+                    bw.WriteNullTerminatedString(Name);
+
+                    UpdateHeaderInfo(bw, 8, (uint)Name.Length + 1, (uint)ofsModelname);
+                }
+
+                if (Sequences.Count > 0)
+                {
+                    var ofsSequences = ms.Position;
+                    foreach (var sequence in Sequences)
+                        bw.WriteStruct(sequence);
+                    UpdateHeaderInfo(bw, 20, (uint)Sequences.Count, (uint)ofsSequences);
+                }
+
+                if (Animations.Count > 0)
+                {
+                    var ofsAnimations = ms.Position;
+                    foreach (var animation in Animations)
+                        bw.WriteStruct(animation);
+                    UpdateHeaderInfo(bw, 28, (uint)Animations.Count, (uint)ofsAnimations);
+                }
+
+                if (AnimationLookups.Count > 0)
+                {
+                    var ofsAnimationLookup = ms.Position;
+                    foreach (var animationLookup in AnimationLookups)
+                        bw.WriteStruct(animationLookup);
+                    UpdateHeaderInfo(bw, 36, (uint)AnimationLookups.Count, (uint)ofsAnimationLookup);
+                }
+
+                if (Bones.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {Bones.Count}x Bones struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsBones = ms.Position;
+                    foreach (var bone in Bones)
+                        bw.WriteStruct(bone);
+                    UpdateHeaderInfo(bw, 44, (uint)Bones.Count, (uint)ofsBones);
+                }
+
+                if (KeyBoneLookup.Count > 0)
+                {
+                    var ofsKeyboneLookup = ms.Position;
+                    foreach (var keyBoneLookup in KeyBoneLookup)
+                        bw.WriteStruct(keyBoneLookup);
+                    UpdateHeaderInfo(bw, 52, (uint)KeyBoneLookup.Count, (uint)ofsKeyboneLookup);
+                }
+
+                if (Vertices.Count > 0)
+                {
+                    var ofsVertices = ms.Position;
+                    foreach (var vertice in Vertices)
+                        bw.WriteStruct(vertice);
+                    UpdateHeaderInfo(bw, 60, (uint)Vertices.Count, (uint)ofsVertices);
+                }
+
+                if (Colors.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {Colors.Count}x Colors struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsColors = ms.Position;
+                    foreach (var color in Colors)
+                        bw.WriteStruct(color);
+                    UpdateHeaderInfo(bw, 72, (uint)Colors.Count, (uint)ofsColors);
+                }
+
+                if (Textures.Count > 0)
+                {
+                    var ofsTextures = ms.Position;
+                    foreach (var texture in Textures)
+                    {
+                        bw.Write((uint)texture.Type);
+                        bw.Write((uint)texture.Flags);
+
+                        if (!string.IsNullOrEmpty(texture.Filename))
+                        {
+                            // TODO: Filename chunk writing for older M2s
+                            throw new NotImplementedException();
+                        }
+                        else
+                        {
+                            bw.Write((uint)0);
+                            bw.Write((uint)0);
+                        }
+                    }
+
+                    UpdateHeaderInfo(bw, 80, (uint)Textures.Count, (uint)ofsTextures);
+                }
+
+                if (Transparency.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {Transparency.Count}x Transparency struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsTransparency = ms.Position;
+                    foreach (var transparency in Transparency)
+                        bw.WriteStruct(transparency);
+
+                    UpdateHeaderInfo(bw, 88, (uint)Transparency.Count, (uint)ofsTransparency);
+                }
+
+                if (UVAnimations.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {UVAnimations.Count}x UVAnimations struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsUVAnimations = ms.Position;
+                    foreach (var uvAnimation in UVAnimations)
+                        bw.WriteStruct(uvAnimation);
+
+                    UpdateHeaderInfo(bw, 96, (uint)UVAnimations.Count, (uint)ofsUVAnimations);
+                }
+
+                if (TextureReplace.Count > 0)
+                {
+                    var ofsTexReplace = ms.Position;
+                    foreach (var textureReplace in TextureReplace)
+                        bw.WriteStruct(textureReplace);
+
+                    UpdateHeaderInfo(bw, 104, (uint)TextureReplace.Count, (uint)ofsTexReplace);
+                }
+
+                if (RenderFlags.Count > 0)
+                {
+                    var ofsRenderFlags = ms.Position;
+                    foreach (var renderFlag in RenderFlags)
+                        bw.WriteStruct(renderFlag);
+                    UpdateHeaderInfo(bw, 112, (uint)RenderFlags.Count, (uint)ofsRenderFlags);
+                }
+
+                if (BoneLookupTable.Count > 0)
+                {
+                    var ofsBoneLookupTable = ms.Position;
+                    foreach (var boneLookupTable in BoneLookupTable)
+                        bw.WriteStruct(boneLookupTable);
+                    UpdateHeaderInfo(bw, 120, (uint)BoneLookupTable.Count, (uint)ofsBoneLookupTable);
+                }
+
+                if (TextureLookup.Count > 0)
+                {
+                    var ofsTexLookup = ms.Position;
+                    foreach (var textureLookup in TextureLookup)
+                        bw.WriteStruct(textureLookup);
+                    UpdateHeaderInfo(bw, 128, (uint)TextureLookup.Count, (uint)ofsTexLookup);
+                }
+
+                // TODO: Unk1?
+
+                if (TransparencyLookup.Count > 0)
+                {
+                    var ofsTranslookup = ms.Position;
+                    foreach (var transparencyLookup in TransparencyLookup)
+                        bw.WriteStruct(transparencyLookup);
+                    UpdateHeaderInfo(bw, 144, (uint)TransparencyLookup.Count, (uint)ofsTranslookup);
+                }
+
+                if (UVAnimLookup.Count > 0)
+                {
+                    var ofsUVAnimLookup = ms.Position;
+                    foreach (var uvAnimLookup in UVAnimLookup)
+                        bw.WriteStruct(uvAnimLookup);
+                    UpdateHeaderInfo(bw, 152, (uint)UVAnimLookup.Count, (uint)ofsUVAnimLookup);
+                }
+
+                // BoundingBox etc is already written and adds 56 bytes
+
+                if (BoundingTriangles.Count > 0)
+                {
+                    var ofsBoundingTriangles = ms.Position;
+                    foreach (var boundingTriangle in BoundingTriangles)
+                        bw.WriteStruct(boundingTriangle);
+                    UpdateHeaderInfo(bw, 216, (uint)BoundingTriangles.Count, (uint)ofsBoundingTriangles);
+                }
+
+                if (BoundingVertices.Count > 0)
+                {
+                    var ofsBoundingVertices = ms.Position;
+                    foreach (var boundingVertex in BoundingVertices)
+                        bw.WriteStruct(boundingVertex);
+                    UpdateHeaderInfo(bw, 224, (uint)BoundingVertices.Count, (uint)ofsBoundingVertices);
+                }
+
+                if (BoundingNormals.Count > 0)
+                {
+                    var ofsBoundingNormals = ms.Position;
+                    foreach (var boundingNormal in BoundingNormals)
+                        bw.WriteStruct(boundingNormal);
+                    UpdateHeaderInfo(bw, 232, (uint)BoundingNormals.Count, (uint)ofsBoundingNormals);
+                }
+
+                if (Attachments.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {Attachments.Count}x Attachments struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsAttachments = ms.Position;
+                    foreach (var attachment in Attachments)
+                        bw.WriteStruct(attachment);
+                    UpdateHeaderInfo(bw, 240, (uint)Attachments.Count, (uint)ofsAttachments);
+                }
+
+                if (AttachLookup.Count > 0)
+                {
+                    var ofsAttachLookup = ms.Position;
+                    foreach (var attachLookup in AttachLookup)
+                        bw.WriteStruct(attachLookup);
+                    UpdateHeaderInfo(bw, 248, (uint)AttachLookup.Count, (uint)ofsAttachLookup);
+                }
+
+                if (Events.Count > 0)
+                {
+                    var ofsEvents = ms.Position;
+                    foreach (var @event in Events)
+                        bw.WriteStruct(@event);
+                    UpdateHeaderInfo(bw, 256, (uint)Events.Count, (uint)ofsEvents);
+                }
+
+                if (Lights.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {Lights.Count}x Lights struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsLights = ms.Position;
+                    foreach (var light in Lights)
+                        bw.WriteStruct(light);
+                    UpdateHeaderInfo(bw, 264, (uint)Lights.Count, (uint)ofsLights);
+                }
+
+                if (Cameras.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {Cameras.Count}x Cameras struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsCameras = ms.Position;
+                    foreach (var camera in Cameras)
+                        bw.WriteStruct(camera);
+                    UpdateHeaderInfo(bw, 272, (uint)Cameras.Count, (uint)ofsCameras);
+                }
+
+                if (CameraLookup.Count > 0)
+                {
+                    var ofsCameraLookup = ms.Position;
+                    foreach (var cameraLookup in CameraLookup)
+                        bw.WriteStruct(cameraLookup);
+                    UpdateHeaderInfo(bw, 280, (uint)CameraLookup.Count, (uint)ofsCameraLookup);
+                }
+
+                if (RibbonEmitters.Count > 0)
+                {
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {RibbonEmitters.Count}x RibbonEmitters struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsRibbonEmitters = ms.Position;
+                    foreach (var ribbonEmitter in RibbonEmitters)
+                        bw.WriteStruct(ribbonEmitter);
+                    UpdateHeaderInfo(bw, 288, (uint)RibbonEmitters.Count, (uint)ofsRibbonEmitters);
+                }
+
+                if (ParticleEmitters.Count > 0)
+                {
+                    throw new NotImplementedException(); // MD21Entry.ParticleEmitterStruct is NYI
+
+                    // TODO: ABlock writing
+                    if (Settings.logLevel >= LogLevel.Warning)
+                        Console.WriteLine($"Attempted to write {ParticleEmitters.Count}x ParticleEmitters struct(s) containing an ABlock. This is not yet supported and likely will cause reading errors.");
+
+                    var ofsParticleEmitters = ms.Position;
+                    foreach (var particleEmitter in ParticleEmitters)
+                        bw.WriteStruct(particleEmitter);
+
+                    UpdateHeaderInfo(bw, 296, (uint)ParticleEmitters.Count, (uint)ofsParticleEmitters);
+                }
+
+                return ms.ToArray();
+            }
         }
     }
 }

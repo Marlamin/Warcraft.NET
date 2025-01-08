@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Warcraft.NET.Attribute;
 using Warcraft.NET.Extensions;
@@ -141,12 +142,11 @@ namespace Warcraft.NET.Files.WDL.Legion
                             MapAreaOffsets.MapAreaOffsets[mapAreaOffsetIndex] = newOffset;
 
                             writtenMapAreaSize += MARE.GetSizeStatic() + offsetChunkHeaderSize;
+                            if (MapAreaOcean[mapAreaOffsetIndex] != null)
+                            {
+                                writtenMapAreaSize += MAOE.GetSizeStatic() + offsetChunkHeaderSize;
+                            }
                             writtenMapAreaSize += MAHO.GetSizeStatic() + offsetChunkHeaderSize;
-                        }
-
-                        if (MapAreaOcean[mapAreaOffsetIndex] != null)
-                        {
-                            writtenMapAreaSize += MAOE.GetSizeStatic() + offsetChunkHeaderSize;
                         }
                     }
                 }
@@ -164,12 +164,11 @@ namespace Warcraft.NET.Files.WDL.Legion
                         if (MapAreas[mapAreaOffsetIndex] != null)
                         {
                             bw.WriteIFFChunk(MapAreas[mapAreaOffsetIndex]);
-                            bw.WriteIFFChunk(MapAreaHoles[mapAreaOffsetIndex] ?? MAHO.CreateEmpty());
-                        }
 
-                        if (MapAreaOcean[mapAreaOffsetIndex] != null)
-                        {
-                            bw.WriteIFFChunk(MapAreaOcean[mapAreaOffsetIndex]);
+                            if (MapAreaOcean[mapAreaOffsetIndex] != null)
+                                bw.WriteIFFChunk(MapAreaOcean[mapAreaOffsetIndex]);
+
+                            bw.WriteIFFChunk(MapAreaHoles[mapAreaOffsetIndex] ?? MAHO.CreateEmpty());
                         }
                     }
                 }
