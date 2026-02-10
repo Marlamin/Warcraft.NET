@@ -46,5 +46,12 @@ namespace Warcraft.NET.Files.WMO.WorldMapObject.Legion
         public WorldMapObjectRoot(byte[] inData) : base(inData)
         {
         }
+
+        /// <summary>
+        /// Initialize an empty instance of the <see cref="Legion.WorldMapObjectRoot"/> class.
+        /// </summary>
+        public WorldMapObjectRoot() : base()
+        {
+        }
     }
 }
