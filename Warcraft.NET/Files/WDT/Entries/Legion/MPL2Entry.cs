@@ -26,6 +26,16 @@ namespace Warcraft.NET.Files.WDT.Entries.Legion
         public Vector3 Position { get; set; }
 
         /// <summary>
+        /// @deprecated Use LightRadius instead.
+        /// </summary>
+        public float LightRadius { get { return AttenuationStart; } set { AttenuationStart = value; }}
+
+        /// <summary>
+        /// @deprecated Use BlendRadius instead.
+        /// </summary>
+        public float BlendRadius { get { return AttenuationEnd; } set { AttenuationEnd = value; } }
+
+        /// <summary>
         /// Attenuation Start
         /// </summary>
         public float AttenuationStart { get; set; }

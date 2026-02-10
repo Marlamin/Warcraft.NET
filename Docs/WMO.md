@@ -13,7 +13,7 @@ N/A = Not in this file for this expansion<br>
 |MOM3|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|
 |MOUV|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|
 |MOGN|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|
-|MOGI|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|
+|MOGI|✔|✔|✔|✔|✔|✔|✔|
 |MOSB|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|
 |MOSI|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|
 |MOPV|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|**NYI**|
